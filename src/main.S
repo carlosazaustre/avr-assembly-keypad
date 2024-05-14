@@ -68,38 +68,53 @@ wait_keypress:
   ; Activamos cada fila individualmente (poniendo a 0) de forma secuancial y leermos las columnas
   ; para identificar si alguna tecla en esa fila está presionada.
   ldi r21, 0b01111111       ; Activamos Fila 1 (Recuerda, poniendo a 0)
-  out _SFR_IO_ADDR(PORTD), r21
-  nop
-  in r21, _SFR_IO_ADDR(PIND) ; Leo todas las columnas de la fila
-  andi r21, 0x0F             ; Aplico máscara para ignorar las filas y leer solo las columnas
-  cpi r21, 0x0F
+  rcall read_columns
   brne row1_col              ; Si no es igual, quiere decir que alguna columna tiene una tecla presionada
                              ; por tanto saltamos a la sección `row1_col` que implementa la lógica
                              ; específica para manejar la entrada de esa fila
 
   ldi r21, 0b10111111        ; Activamos Fila 2, el resto del código es igual
-  out _SFR_IO_ADDR(PORTD), r21
-  nop
-  in r21, _SFR_IO_ADDR(PIND)
-  andi r21, 0x0F
-  cpi r21, 0x0F
+  rcall read_columns
   brne row2_col
 
   ldi r21, 0b11011111         ; Activamos Fila 3
-  out _SFR_IO_ADDR(PORTD), r21
-  nop
-  in r21, _SFR_IO_ADDR(PIND)
-  andi r21, 0x0F
-  cpi r21, 0x0F
+  rcall read_columns
   brne row3_col
 
   ldi r21, 0b11101111         ; Activamos Fila 4
+  rcall read_columns
+  brne row4_col
+
+scan_rows:
+  ldi r21, 0b01111111 ; Inicializa la Fila 1
+  ldi r23, 4          ; Contador para 4 filas
+next_row:
+  rcall read_columns
+  brne row_col
+  lsl r21             ; Desplaza a la izquierda los bits de R21 para activar la siguiente fila
+  dec r23             ; Decrementa el contador de filas
+  brne next_row       ; Continua con la sigueinte fila si aún quedan filas por procesar
+  rjmp scan_rows      ; Reiniciamos el escaneo de filas
+
+row_col: 
+  ; Comprueba que bit está en bajo y salta a la lógica específica de esa fila
+  cpi r21, 0b01111111
+  breq row1_col
+  cpi r21, 0b10111111
+  breq row2_col
+  cpi r21, 0b11011111
+  breq row3_col
+  cpi r21, 0b11101111
+  breq row4_col
+  rjmp scan_rows      ; Reinicia si ninguna condición coincide 
+
+read_columns:
   out _SFR_IO_ADDR(PORTD), r21
   nop
   in r21, _SFR_IO_ADDR(PIND)
   andi r21, 0x0F
   cpi r21, 0x0F
-  brne row4_col
+  ret
 
   ; -----------------------------------------
   ; Localización del Dígito
