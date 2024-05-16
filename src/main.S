@@ -1,3 +1,10 @@
+;
+;  Program: KeyPad
+;  Description: Setup a Keypad to show in binary code with LEDS, the digit pressed on it
+;  Author: Carlos Azaustre
+;  Created: 10/05/2024
+;
+
 #include <avr/io.h>
 
 .org 0x00
